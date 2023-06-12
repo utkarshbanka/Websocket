@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chat App</title>
+<!-- Include Bootstrap CSS -->
+
+<link rel="stylesheet"
+	href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<!-- Include jQuery and Bootstrap JS -->
+
+<!-- your other scripts -->
+
+
+
+
+
+
+</head>
+<body>
+
+	<div class="container-fluid">
+		<div class="row">
+
+			<!-- User List Column -->
+			<div class="col-3">
+				<table class="table table-hover" id="userListTable">
+					<thead>
+						<tr>
+							<th scope="col">Users</th>
+						</tr>
+					</thead>
+					<tbody>
+						<!-- Iterate over the user list fetched from the server using a Servlet API -->
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Chat Interface Column -->
+			<div class="col-9">
+				<!-- Chat History Section -->
+				<div id="chatHistory"></div>
+				<!-- Chat Form Section -->
+				<form id="chatForm">
+					<div class="form-group">
+						<label for="toEmail">To:</label> <input type="email"
+							class="form-control" id="toEmail" required>
+					</div>
+					<div class="form-group">
+						<label for="message">Message:</label>
+						<textarea class="form-control" id="message" rows="3" required></textarea>
+					</div>
+					<button type="submit" class="btn btn-primary">Send</button>
+					<button onclick="logout()" class="btn btn-primary">Logout</button>
+				</form>
+
+				<div id="messageHistory"></div>
+
+			</div>
+
+		</div>
+	</div>
+	
+	
+
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script
+	src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.4.js"
+	integrity="sha256-a9jBBRygX1Bh5lt8GZjXDzyOB+bWve9EiO7tROUtj/E="
+	crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script>
+		// Function to load the chat history for a selected user
+
+		function logout() {
+				sessionStorage.removeItem("websocketURL");
+				window.location.replace("Login.html");
+			}
+		
+		
+		
+		$(document).ready(function() {
+			
+
+			var ws = new WebSocket(sessionStorage.getItem("websocketURL"));
+			ws.onopen = function() {
+				console.log("WebSocket connection established.");
+			};
+			ws.onmessage = function(event) {
+				console.log("Received message: " + event.data);
+				displayMessage(event.data); // Display the received message
+			};
+			ws.onerror = function(event) {
+				console.error("WebSocket error:", event);
+			};
+			ws.onclose = function(event) {
+				console.log("WebSocket connection closed:", event);
+			};
+
+			function loadChatHistory(userId) {
+				// Make an AJAX call to fetch the chat history from the server using a Servlet API
+				$.ajax({
+					url : "chatHistoryServlet",
+					type : "GET",
+					data : {
+						userId : userId
+					},
+					success : function(chatHistory) {
+						// Update the chat history section with the fetched data
+						$("#chatHistory").html(chatHistory);
+					}
+				});
+			}
+
+			// Function to send a message to a selected user
+			$("#chatForm").submit((e)=>{
+				e.preventDefault()
+				sendMessage(e)
+			})
+			
+
+			function sendMessage(e) {
+				var toEmail = document.getElementById("toEmail").value;
+				var message = document.getElementById("message").value;
+				var from = localStorage.getItem('fromt');
+				var data = {
+					to : toEmail,
+					message : message,
+					fromt : from
+				};
+				ws.send(JSON.stringify(data));
+				console.log("Sent message:", data);
+				displayMessage("Me: " + message); // Display the sent message\
+				mainData.push(toEmail)
+				appending()
+			}
+
+			function displayMessage(message) {
+				var messageHistory = document.getElementById("messageHistory");
+				var newMessage = document.createElement("p");
+				newMessage.textContent = message;
+				messageHistory.appendChild(newMessage);
+			}
+     
+			
+			let mainData = []
+			var from = localStorage.getItem('fromt');
+			$.ajax({
+				url : "http://localhost:8082/WebscoketChatApp/GetchatDetails",
+				method : "GET",
+				data : {
+					username : from
+				},
+				dataType : "json"
+			}).done(function(data) {
+				// iterate over the data and append it to the user list table
+				console.log(data)
+				mainData = data
+				appending()
+			}).fail(function(jqXHR, textStatus, errorThrown) {
+				console.log("Error fetching user list: " + textStatus);
+			});
+			
+			
+			function appending(){
+				$("tbody").html("")
+			
+				
+				var userListTable = $("#userListTable");
+				$.each(mainData, function(index, user) {
+					var values = `<td>${user}</td>`
+					var div = 	`<tr id=${index}>${values}</tr>`;
+					
+					
+					
+					$(values).click(function(){
+						
+						console.log(user)
+						localStorage.setItem("toUser", user)
+						
+					})
+					
+					
+						
+						
+				
+					
+				/* 	div.addEventListener("click", ()=>{
+					}) */
+					
+					
+					userListTable.append(div)
+					$
+				});
+			}
+			
+			
+		});
+		
+		const fromUser =  localStorage.getItem('fromt');
+		const toUser =  'ro@gmail.com';
+
+		fetch(`http://localhost:8082/WebscoketChatApp/Geteachmsg?from=${fromUser}&to=${toUser}`)
+		  .then(response => response.json())
+		  .then(messages => {
+		    // Do something with the messages
+		    console.log(messages);
+		  })
+		  .catch(error => {
+		    console.error(error);
+		    // Display an error message to the user
+		  });
+		
+	</script>
+
+</body>
+</html>
